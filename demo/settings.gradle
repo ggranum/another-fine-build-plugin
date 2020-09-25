@@ -1,0 +1,10 @@
+pluginManagement {
+    repositories {
+        jcenter()
+        mavenLocal()
+        gradlePluginPortal()
+
+    }
+}
+rootProject.name = 'another-fine-build-demo'
+

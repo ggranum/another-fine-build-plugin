@@ -1,0 +1,70 @@
+plugins {
+    id 'java'
+    id 'com.geoffgranum.gradle-conventional-changelog' version '0.3.1'
+    id 'com.geoffgranum.another-fine-build' version '0.0.1'
+}
+
+anotherFineBuild {
+
+    currentVersion = file("./version.number")
+    /**
+     * Release targets match on the version suffix. Order is important. The first target to match the current
+     * version will become the 'active' releaseTarget for the remainder of the build.
+     */
+    releaseTargets = [
+        production: {
+            artifacts = true
+            docker = true
+            dockerTag = "release"
+            matchingVersionsRegex = 'v.*-RELEASE$'
+        },
+        stage: {
+            artifacts = true
+            dockerTag = "stage" // docker=true is automatically assumed if you provide a dockerTag
+            matchingVersionsRegex = 'v.*-RC[\\d]*'
+        },
+        dev: {
+            artifacts = false
+            docker = false
+            matchingVersionsRegex = 'v.*'
+        }
+    ] as Map<String, Closure>
+    git {
+        gitRoot = new File(rootProject.rootDir, "../").getAbsolutePath()
+        username = "Use ~/.gradle/gradle.properties to set. Cert-based auth is better and then you won't need these. "
+        apiKey = "Use ~/.gradle/gradle.properties to set."
+    }
+    docker {
+        repositoryHost = "yourDockerRepo.yourHost.org"
+        repositoryOrg = "yourRepo"
+        username = "Use ~/.gradle/gradle.properties to set."
+        apiToken = "Use ~/.gradle/gradle.properties to set."
+    }
+    artifacts {
+        groupId = "com.geoffgranum.anotherfinebuild.demo"
+        deploy = {
+            url = "https://artifacts.yourhost.org/artifactory/main-maven-releases"
+            snapshotUrl = "https://artifacts.yourhost.org/artifactory/main-maven-snapshots"
+            username = "Only required if you're deploying artifacts. Use ~/.gradle/gradle.properties to set."
+            apiKey = "Only required if you're deploying artifacts. Use ~/.gradle/gradle.properties to set."
+        }
+        read = {
+            url = "https://artifacts.yourhost.org/artifactory/main-maven-releases"
+            snapshotUrl = "https://artifacts.yourhost.org/artifactory/main-maven-snapshots"
+            username = "Use ~/.gradle/gradle.properties to set."
+            apiKey = "Use ~/.gradle/gradle.properties to set."
+        }
+    }
+}
+
+println "Token! " + anotherFineBuild.docker.apiToken
+
+afb {
+    println "afb Configure"
+    doFirst {
+        println "afb doFirst"
+    }
+    doLast {
+        println "afb doLast"
+    }
+}

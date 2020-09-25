@@ -1,0 +1,89 @@
+plugins {
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'com.gradle.plugin-publish' version '0.12.0'
+    id 'maven-publish'
+}
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion = "6.6.1"
+}
+
+repositories {
+    mavenLocal()
+    jcenter()
+    maven {
+        url  "https://dl.bintray.com/ggranum/another-fine-build"
+    }
+}
+
+
+project.ext.pluginId = rootProject['project.pluginId']
+version = rootProject['project.version']
+group = 'com.geoffgranum'
+
+pluginBundle {
+    website = 'https://github.com/ggranum/another-fine-build/'
+    vcsUrl = 'https://github.com/ggranum/another-fine-build/'
+    tags = ['CICD', 'git', 'docker', 'build', 'java', 'uttu']
+}
+
+gradlePlugin {
+    plugins {
+        conventionalChangelogPlugin {
+            id = project.pluginId
+            displayName = 'Another Fine Build'
+            description = "Drag some of the things NPM gives by default into Java land."
+            implementationClass = 'com.geoffgranum.build.afb.AnotherFineBuildPlugin'
+        }
+    }
+}
+
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'commons-io:commons-io:2.8.0'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:5.9.0.202009080501-r'
+    testImplementation group: 'org.spockframework', name: 'spock-core', version: '1.3-groovy-2.5'
+}
+
+test {
+    testLogging {
+        exceptionFormat = 'full'
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Another Fine Build Plugin',
+                'Implementation-Version': project.version,
+                'Built-By': 'Geoff Granum',
+                'Built-Date': new Date(),
+                'Built-JDK': System.getProperty('java.version'),
+                'Built-Gradle': gradle.gradleVersion
+    }
+}
+
+task sourcesJar(type: Jar) {
+    classifier 'sources'
+    from sourceSets.main.allSource
+}
+
+
+task javadocJar(type: Jar, dependsOn:javadoc) {
+    classifier 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+}
