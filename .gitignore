@@ -87,7 +87,7 @@ activemq-data/
 .gradle/
 
 #Build dirs
-/build/
+build/
 deploy/
 out/
 dist/

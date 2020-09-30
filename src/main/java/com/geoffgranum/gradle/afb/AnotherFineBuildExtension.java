@@ -1,47 +1,41 @@
-package com.geoffgranum.build.afb;
+package com.geoffgranum.gradle.afb;
 
-import com.geoffgranum.build.VersionInfo;
-import com.geoffgranum.build.configuration.ArtifactRepoConfig;
-import com.geoffgranum.build.configuration.DockerConfig;
-import com.geoffgranum.build.configuration.GitConfig;
-import com.geoffgranum.build.configuration.ReleaseTarget;
+import com.geoffgranum.gradle.afb.domain.BuildInfo;
+import com.geoffgranum.gradle.afb.domain.configuration.ArtifactRepoConfig;
+import com.geoffgranum.gradle.afb.domain.configuration.DockerConfig;
+import com.geoffgranum.gradle.afb.domain.configuration.GitConfig;
+import com.geoffgranum.gradle.afb.domain.configuration.ReleaseTarget;
 import groovy.lang.Closure;
-import org.apache.commons.io.FileUtils;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.Input;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 public class AnotherFineBuildExtension {
 
+    private File versionInfoFilePath;
+    private String buildType;
     private final Project project;
     private final DockerConfig docker = new DockerConfig();
     private final GitConfig git = new GitConfig();
     private final ArtifactRepoConfig artifacts = new ArtifactRepoConfig();
     private final Map<String, ReleaseTarget> releaseTargets = new HashMap<>();
-    private String currentVersion;
-    private VersionInfo versionInfo;
+
+    private BuildInfo info;
 
     public AnotherFineBuildExtension(Project project) {
         this.project = project;
     }
 
-    public String getCurrentVersion() {
-        return currentVersion;
+    public File getVersionInfoFilePath() {
+        return versionInfoFilePath;
     }
 
-    public void setCurrentVersion(String currentVersion) {
-        this.currentVersion = currentVersion;
-    }
-
-
-    public void setCurrentVersion(File currentVersion) throws IOException {
-        this.currentVersion = FileUtils.readFileToString(currentVersion, StandardCharsets.UTF_8).trim();
+    public void setVersionInfoFilePath(File versionInfoFilePath) {
+        this.versionInfoFilePath = versionInfoFilePath;
     }
 
     @Input
@@ -80,7 +74,28 @@ public class AnotherFineBuildExtension {
         action.execute(artifacts);
     }
 
-    public void setInfo(VersionInfo versionInfo) {
-        this.versionInfo = versionInfo;
+    public ArtifactRepoConfig artifacts() {
+        return artifacts;
     }
+
+    public ArtifactRepoConfig getArtifacts() {
+        return artifacts;
+    }
+
+    public void setInfo(BuildInfo buildInfo) {
+        this.info = buildInfo;
+    }
+
+    public BuildInfo getInfo() {
+        return info;
+    }
+
+    public String getBuildType() {
+        return buildType;
+    }
+
+    public void setBuildType(String buildType) {
+        this.buildType = buildType;
+    }
+
 }

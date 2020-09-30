@@ -1,9 +1,11 @@
-package com.geoffgranum.build.configuration;
+package com.geoffgranum.gradle.afb.domain.configuration;
 
 public class ReleaseTarget {
     private String name;
-    private String matchingVersionsRegex;
+    private String versionMatches;
+    private String buildTypeMatches;
     private boolean artifacts;
+    private boolean isSnapshot;
     private boolean docker;
     private String dockerTag;
 
@@ -13,6 +15,22 @@ public class ReleaseTarget {
 
     public String getName() {
         return name;
+    }
+
+    public boolean isSnapshot() {
+        return isSnapshot;
+    }
+
+    public void setSnapshot(boolean snapshot) {
+        isSnapshot = snapshot;
+    }
+
+    public String getBuildTypeMatches() {
+        return buildTypeMatches;
+    }
+
+    public void setBuildTypeMatches(String buildTypeMatches) {
+        this.buildTypeMatches = buildTypeMatches;
     }
 
     public void setName(String name) {
@@ -35,19 +53,19 @@ public class ReleaseTarget {
         this.docker = docker;
     }
 
-    public String getMatchingVersionsRegex() {
-        return matchingVersionsRegex;
+    public String getVersionMatches() {
+        return versionMatches;
     }
 
-    public void setMatchingVersionsRegex(String matchingVersionsRegex) {
-        this.matchingVersionsRegex = matchingVersionsRegex;
+    public void setVersionMatches(String versionMatches) {
+        this.versionMatches = versionMatches;
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("AppEnvironment{");
         sb.append("name='").append(name).append('\'');
-        sb.append(", matchingVersionsRegex='").append(matchingVersionsRegex).append('\'');
+        sb.append(", matchingVersionsRegex='").append(versionMatches).append('\'');
         sb.append('}');
         return sb.toString();
     }
@@ -62,5 +80,13 @@ public class ReleaseTarget {
     public void setDockerTag(String dockerTag) {
         this.docker = true;
         this.dockerTag = dockerTag;
+    }
+
+    public boolean matches(String buildType, String version) {
+        boolean matches = false;
+        if(version.matches(this.versionMatches)){
+            matches = this.buildTypeMatches == null || buildType.matches(buildTypeMatches);
+        }
+        return  matches;
     }
 }

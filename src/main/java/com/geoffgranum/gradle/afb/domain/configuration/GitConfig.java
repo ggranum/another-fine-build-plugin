@@ -1,4 +1,4 @@
-package com.geoffgranum.build.configuration;
+package com.geoffgranum.gradle.afb.domain.configuration;
 
 public class GitConfig {
     private String username;

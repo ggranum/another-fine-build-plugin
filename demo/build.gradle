@@ -1,32 +1,49 @@
 plugins {
     id 'java'
+    id 'maven-publish'
     id 'com.geoffgranum.gradle-conventional-changelog' version '0.3.1'
-    id 'com.geoffgranum.another-fine-build' version '0.0.1'
+    id 'com.geoffgranum.another-fine-build' version '0.0.3'
 }
 
-anotherFineBuild {
+afb {
 
-    currentVersion = file("./version.number")
+    /**
+     * The version file will be updated with the current version info as a JSON object when changes are made.
+     */
+    versionInfoFilePath = file("./version.info")
+
+    /**
+     * Some CI/CD builds have multiple build configurations based on if it's being built for actual deployment
+     * or if it's being built to validate a commit. If, for example, Jenkins only triggered this build because
+     * of a Pull Request trigger, but its a PR for a Production-tagged release, then we really shouldn't deploy it.
+     */
+    buildType = System.getProperty("BUILD_TYPE", "local-dev")
+
     /**
      * Release targets match on the version suffix. Order is important. The first target to match the current
      * version will become the 'active' releaseTarget for the remainder of the build.
      */
     releaseTargets = [
+        pr: {
+            versionMatches = 'v.*'
+            buildTypeMatches = "PR" //only matches if buildType is "PR"
+        },
         production: {
             artifacts = true
             docker = true
             dockerTag = "release"
-            matchingVersionsRegex = 'v.*-RELEASE$'
+            versionMatches = 'v.*-RELEASE$'
+            buildTypeMatches = 'CICD'
         },
         stage: {
             artifacts = true
             dockerTag = "stage" // docker=true is automatically assumed if you provide a dockerTag
-            matchingVersionsRegex = 'v.*-RC[\\d]*'
+            versionMatches = 'v.*-RC[\\d]*'
         },
         dev: {
             artifacts = false
             docker = false
-            matchingVersionsRegex = 'v.*'
+            versionMatches = 'v.*'
         }
     ] as Map<String, Closure>
     git {
@@ -35,10 +52,10 @@ anotherFineBuild {
         apiKey = "Use ~/.gradle/gradle.properties to set."
     }
     docker {
-        repositoryHost = "yourDockerRepo.yourHost.org"
-        repositoryOrg = "yourRepo"
-        username = "Use ~/.gradle/gradle.properties to set."
-        apiToken = "Use ~/.gradle/gradle.properties to set."
+        repoHost =  "hub.docker.com" // "yourDockerRepo.yourHost.org"
+        repoName = "ggranum/another-fine-build-demo"
+        username =  "ggranum" // Consider using ~/.gradle/gradle.properties to set.
+        apiToken = dockerHubApiToken //  "Use ~/.gradle/gradle.properties to set."
     }
     artifacts {
         groupId = "com.geoffgranum.anotherfinebuild.demo"
@@ -47,24 +64,55 @@ anotherFineBuild {
             snapshotUrl = "https://artifacts.yourhost.org/artifactory/main-maven-snapshots"
             username = "Only required if you're deploying artifacts. Use ~/.gradle/gradle.properties to set."
             apiKey = "Only required if you're deploying artifacts. Use ~/.gradle/gradle.properties to set."
+            repoName = ""
         }
         read = {
             url = "https://artifacts.yourhost.org/artifactory/main-maven-releases"
             snapshotUrl = "https://artifacts.yourhost.org/artifactory/main-maven-snapshots"
             username = "Use ~/.gradle/gradle.properties to set."
             apiKey = "Use ~/.gradle/gradle.properties to set."
+
         }
     }
 }
 
-println "Token! " + anotherFineBuild.docker.apiToken
+anotherFineBuild {}
 
-afb {
-    println "afb Configure"
-    doFirst {
-        println "afb doFirst"
+
+jar {
+    archiveBaseName.set(project.name)
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    duplicatesStrategy( DuplicatesStrategy.INCLUDE )
+    //noinspection GroovyAssignabilityCheck
+    archiveClassifier.set("sources")
+    archiveBaseName.set(project.name)
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+publishing {
+    publications {
+        archives(MavenPublication) {
+            groupId = afb.artifacts.groupId
+            artifactId = project.name
+            version = afb.info.version.full
+            artifact jar
+            artifact sourcesJar
+        }
     }
-    doLast {
-        println "afb doLast"
+    repositories {
+        maven {
+            url afb.info.target.isSnapshot ? afb.artifacts.deploy.snapshotUrl : afb.artifacts.deploy.url
+            name afb.artifacts.repoName
+            credentials {
+                username = afb.artifacts.deploy.username
+                password = afb.artifacts.deploy.apiKey
+            }
+        }
     }
 }

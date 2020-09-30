@@ -1,9 +1,10 @@
-package com.geoffgranum.build.configuration;
+package com.geoffgranum.gradle.afb.domain.configuration;
 
 import groovy.lang.Closure;
 
 public class ArtifactRepoConfig {
     private String groupId;
+    private String repoName;
     private ArtifactRepoTarget deploy;
     private ArtifactRepoTarget read;
 
@@ -35,6 +36,14 @@ public class ArtifactRepoConfig {
         ArtifactRepoTarget t = new ArtifactRepoTarget();
         closure.setDelegate(t);
         closure.run();
-        this.deploy = t;
+        this.read = t;
+    }
+
+    public String getRepoName() {
+        return repoName;
+    }
+
+    public void setRepoName(String repoName) {
+        this.repoName = repoName;
     }
 }
