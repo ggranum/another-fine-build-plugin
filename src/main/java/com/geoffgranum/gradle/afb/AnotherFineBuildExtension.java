@@ -53,7 +53,7 @@ public class AnotherFineBuildExtension {
     public void setReleaseTargets(Map<String, Closure<ReleaseTarget>> targets) {
         // this.releaseTargets = targets;
         for (Map.Entry<String, Closure<ReleaseTarget>> entry : targets.entrySet()) {
-            ReleaseTarget t = new ReleaseTarget(entry.getKey());
+            ReleaseTarget t = new ReleaseTarget(entry.getKey().trim());
             Closure<ReleaseTarget> value = entry.getValue();
             value.setDelegate(t);
             value.run();

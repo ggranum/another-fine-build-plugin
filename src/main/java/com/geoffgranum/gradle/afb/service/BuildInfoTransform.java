@@ -17,6 +17,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,7 +43,7 @@ public class BuildInfoTransform {
       builder.suffix(matcher.group(5));
     }
     VersionInfo versionInfo = builder.build();
-    ReleaseTarget target = getReleaseTarget(extension.getReleaseTargets(), versionInfo);
+    ReleaseTarget target = getReleaseTarget(project, extension.getReleaseTargets(), versionInfo);
     DockerInfo dockerInfo = getDockerInfo(project, extension.getDocker(), target, versionInfo, dateStamp);
     return new BuildInfo.Builder()
       .versionInfoFilePath(extension.getVersionInfoFilePath())
@@ -64,25 +65,49 @@ public class BuildInfoTransform {
       .isLocal(isLocal)
       .isHub(isHub)
       .host(host)
+      .org(docker.getRepoOrg())
       .repo(docker.getRepoName().call(project))
       .buildDir("docker")
       .dockerFile("Dockerfile")
       .username(docker.getUsername())
       .apiToken(docker.getApiToken());
     if (target.getDockerTag() != null) {
-      DockerTag placeholder = new DockerTag("placeholder", "Tag image with 'placeholder'", target.getDockerTag());
+      DockerTag placeholder = new DockerTag(target.getDockerTag(), "Tag image with '" + target.getDockerTag() + "'", target.getDockerTag());
       builder.tags(Lists.newArrayList(placeholder));
     }
     return builder.build();
   }
 
-  private ReleaseTarget getReleaseTarget(Map<String, ReleaseTarget> releaseTargets, VersionInfo versionInfo) {
-    for (Map.Entry<String, ReleaseTarget> entry : releaseTargets.entrySet()) {
-      if (entry.getValue().matches(extension.getBuildType(), versionInfo.full)) {
-        return entry.getValue();
+  private ReleaseTarget getReleaseTarget(Project project, Map<String, ReleaseTarget> releaseTargets, VersionInfo versionInfo) {
+    ReleaseTarget result = null;
+    Optional<String> forceTargetTo = getForceTargetKey(project);
+    if (forceTargetTo.isPresent()) {
+      result = releaseTargets.get(forceTargetTo.get());
+      if (result == null) {
+        throw new RuntimeException("Cannot find target with key '" + forceTargetTo.get() + "'. Cannot force target to non-existing configuration.");
+      }
+    } else {
+      for (Map.Entry<String, ReleaseTarget> entry : releaseTargets.entrySet()) {
+        if (entry.getValue().matches(extension.getBuildType(), versionInfo.full)) {
+          result = entry.getValue();
+          break;
+        }
       }
     }
-    throw new RuntimeException("Could not find matching release target for version '" + versionInfo.full + "'.");
+    if (result == null) {
+      throw new RuntimeException("Could not find matching release target for version '" + versionInfo.full + "'.");
+    }
+    return result;
+  }
+
+  private Optional<String> getForceTargetKey(Project project) {
+    Optional<String> result = Optional.empty();
+    if (project.hasProperty("forceTarget")) {
+      result = Optional.of((String) project.getProperties().get("forceTarget"));
+    } else if (System.getProperties().containsKey("forceTarget")) {
+      result = Optional.of(System.getProperty("forceTarget"));
+    }
+    return result;
   }
 
   private Matcher getVersionMatcher(String version) {
