@@ -8,3 +8,5 @@ pluginManagement {
 }
 rootProject.name = 'another-fine-build-demo'
 
+include 'service'
+

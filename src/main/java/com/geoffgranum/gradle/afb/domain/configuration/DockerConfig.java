@@ -1,8 +1,11 @@
 package com.geoffgranum.gradle.afb.domain.configuration;
 
+import groovy.lang.Closure;
+
 public class DockerConfig {
     private String repoHost;
-    private String repoName;
+    private String repoOrg;
+    private Closure<String> repoName;
     private String username;
     private String apiToken;
 
@@ -14,11 +17,11 @@ public class DockerConfig {
         this.repoHost = repoHost;
     }
 
-    public String getRepoName() {
+    public Closure<String> getRepoName() {
         return repoName;
     }
 
-    public void setRepoName(String repoName) {
+    public void setRepoName(Closure<String> repoName) {
         this.repoName = repoName;
     }
 
@@ -36,5 +39,13 @@ public class DockerConfig {
 
     public void setApiToken(String apiToken) {
         this.apiToken = apiToken;
+    }
+
+    public String getRepoOrg() {
+        return repoOrg;
+    }
+
+    public void setRepoOrg(String repoOrg) {
+        this.repoOrg = repoOrg;
     }
 }

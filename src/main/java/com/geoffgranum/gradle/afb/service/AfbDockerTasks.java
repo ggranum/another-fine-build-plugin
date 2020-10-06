@@ -14,14 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class AfbDocker {
+public class AfbDockerTasks {
     public void applyDockerTasks(Project project, BuildInfo info) {
-        Copy dockerAssemble = addDockerAssembleTask(project, info);
-        Exec dockerBuild = addDockerBuildTask(project, dockerAssemble, info);
-        Task dockerApplyAllTags = addDockerAllTagsTask(project, dockerBuild, info);
-        List<Exec> dockerTags = addDockerTagTasks(project, dockerApplyAllTags, info);
-        Exec dockerPush = addDockerPushTask(project, dockerApplyAllTags, info);
-        Optional<Task> dockerLogin = addDockerLoginTask(project, dockerPush, info);
+        if (new File(project.getProjectDir(), info.docker.dockerFile).exists()) {
+            Copy dockerAssemble = addDockerAssembleTask(project, info);
+            Exec dockerBuild = addDockerBuildTask(project, dockerAssemble, info);
+            Task dockerApplyAllTags = addDockerAllTagsTask(project, dockerBuild, info);
+            List<Exec> dockerTags = addDockerTagTasks(project, dockerApplyAllTags, info);
+            Optional<Task> dockerLogin = addDockerLoginTask(project, info);
+            Exec dockerPush = addDockerPushTask(project, dockerLogin, dockerApplyAllTags, info);
+        }
     }
 
     private Copy addDockerAssembleTask(Project project, BuildInfo info) {
@@ -30,7 +32,7 @@ public class AfbDocker {
             assembleTask.setGroup(AnotherFineBuildPlugin.GROUP);
             assembleTask.setDescription("Assemble docker content for build.");
             assembleTask.from(docker.dockerFile);
-            assembleTask.into(docker.buildDir);
+            assembleTask.into(new File(project.getBuildDir(), docker.buildDir));
             assembleTask.with(project.copySpec());
         });
     }
@@ -40,20 +42,23 @@ public class AfbDocker {
         return project.getTasks().create("dockerBuild", Exec.class, buildTask -> {
             buildTask.setGroup(AnotherFineBuildPlugin.GROUP);
             buildTask.setDescription("Build the primary docker image");
-            buildTask.setWorkingDir(docker.buildDir);
+            buildTask.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
             buildTask.setCommandLine("docker", "build", "--tag", docker.baseRepoTag(), ".");
             buildTask.dependsOn(assembleTask);
         });
     }
 
-    private Exec addDockerPushTask(Project project, Task applyAllTagsTask, BuildInfo info) {
+    private Exec addDockerPushTask(Project project, Optional<Task> dockerLogin, Task applyAllTagsTask, BuildInfo info) {
         DockerInfo docker = info.docker;
         return project.getTasks().create("dockerPush", Exec.class, pushTask -> {
             pushTask.setGroup(AnotherFineBuildPlugin.GROUP);
             pushTask.setDescription("Push the image to the configured docker host.");
-            pushTask.setWorkingDir(docker.buildDir);
+            pushTask.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
             pushTask.setCommandLine("docker", "push", docker.baseRepoTag());
             pushTask.dependsOn(applyAllTagsTask);
+            if (dockerLogin.isPresent()) {
+                pushTask.dependsOn(dockerLogin);
+            }
         });
     }
 
@@ -75,7 +80,7 @@ public class AfbDocker {
             Exec task = project.getTasks().create("dockerTag" + tag.shortName, Exec.class, (tagTask -> {
                 tagTask.setGroup(AnotherFineBuildPlugin.GROUP);
                 tagTask.setDescription(tag.description);
-                tagTask.setWorkingDir(new File(project.getBuildDir(), "/docker"));
+                tagTask.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
                 tagTask.setCommandLine("docker", "tag", docker.baseRepoTag(), tag.tag);
                 dockerApplyAllTags.dependsOn(tagTask);
             }));
@@ -84,8 +89,7 @@ public class AfbDocker {
         return result;
     }
 
-
-    private Optional<Task> addDockerLoginTask(Project project, Exec dockerPush, BuildInfo info) {
+    private Optional<Task> addDockerLoginTask(Project project, BuildInfo info) {
         Optional<Task> result = Optional.empty();
         if (!info.docker.isLocal) {
             DockerInfo docker = info.docker;
@@ -93,10 +97,10 @@ public class AfbDocker {
                 task.setGroup(AnotherFineBuildPlugin.GROUP);
                 task.setDescription("Login to docker");
                 task.doLast(t -> {
-                    if(!project.getRootProject().getExtensions().getExtraProperties().has("afb.dockerLoginHasRun")) {
+                    if (!project.getRootProject().getExtensions().getExtraProperties().has("afb.dockerLoginHasRun")) {
                         project.exec(execSpec -> {
                             execSpec.executable("docker");
-                            if(docker.host.contains("hub.docker.com")){
+                            if (docker.host.contains("hub.docker.com")) {
                                 execSpec.args("login", "-u", docker.username, "-p", docker.apiToken);
                             } else {
                                 execSpec.args("login", "-u", docker.username, "-p", docker.apiToken, docker.host);
@@ -105,7 +109,6 @@ public class AfbDocker {
                         project.getRootProject().getExtensions().getExtraProperties().set("afb.dockerLoginHasRun", true);
                     }
                 });
-                dockerPush.dependsOn(task);
             });
             result = Optional.of(dockerLogin);
         }

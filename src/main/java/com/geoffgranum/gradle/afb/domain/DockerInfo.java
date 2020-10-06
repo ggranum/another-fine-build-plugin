@@ -15,8 +15,8 @@ public final class DockerInfo {
 
     public final String username;
     public final String apiToken;
-    public final File dockerFile;
-    public final File buildDir;
+    public final String dockerFile;
+    public final String buildDir;
     public final List<DockerTag> tags;
 
     public final String versionString;
@@ -47,8 +47,8 @@ public final class DockerInfo {
         private Boolean isHub = false;
         private String username;
         private String apiToken;
-        private File dockerFile;
-        private File buildDir;
+        private String dockerFile;
+        private String buildDir;
         private List<DockerTag> tags = Collections.emptyList();
         private String versionString;
         private String dateStamp;
@@ -86,12 +86,12 @@ public final class DockerInfo {
             return this;
         }
 
-        public Builder dockerFile(File dockerFile) {
+        public Builder dockerFile(String dockerFile) {
             this.dockerFile = dockerFile;
             return this;
         }
 
-        public Builder buildDir(File buildDir) {
+        public Builder buildDir(String buildDir) {
             this.buildDir = buildDir;
             return this;
         }

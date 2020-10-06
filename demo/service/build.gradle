@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+repositories {
+    jcenter();
+}
+
+dependencies {
+    implementation "com.google.guava:guava:$afb.versions.guava"
+}
+
+jar {
+    archiveBaseName.set(project.name)
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    duplicatesStrategy(DuplicatesStrategy.INCLUDE)
+    //noinspection GroovyAssignabilityCheck
+    archiveClassifier.set("sources")
+    archiveBaseName.set(project.name)
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+publishing {
+    publications {
+        archives(MavenPublication) {
+            groupId = afb.artifacts.groupId
+            artifactId = project.name
+            version = afb.info.version.full
+            artifact jar
+            artifact sourcesJar
+        }
+    }
+    repositories {
+        maven {
+            url afb.info.target.isSnapshot ? afb.artifacts.deploy.snapshotUrl : afb.artifacts.deploy.url
+            name afb.artifacts.repoName
+            credentials { p ->
+                username = afb.artifacts.deploy.username
+                password = afb.artifacts.deploy.apiKey
+            }
+        }
+    }
+}

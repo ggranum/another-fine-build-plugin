@@ -21,7 +21,6 @@ public final class VersionInfo {
         sb.append(String.format("%s.%s.%s", major, minor, patch));
         suffix.ifPresent(s -> sb.append("-").append(s));
         full = sb.toString();
-
     }
 
     public VersionInfo nextPatch() {
@@ -36,7 +35,8 @@ public final class VersionInfo {
         return new Builder().from(this).major(major + 1).minor(0).patch(0).build();
     }
 
-    public static final class Builder {
+
+  public static final class Builder {
         private Integer major = 0;
         private Integer minor = 0;
         private Integer patch = 0;
