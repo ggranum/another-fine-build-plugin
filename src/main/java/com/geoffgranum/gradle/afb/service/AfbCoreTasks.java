@@ -27,6 +27,7 @@ public class AfbCoreTasks {
       else if(project.getPlugins().hasPlugin("java")){
         project.getLogger().quiet("AFB: Adding java build task to chain");
         buildTask.dependsOn("build");
+        buildTask.dependsOn("test");
       }
       if (target.isArtifacts() && project.getPlugins().hasPlugin("maven-publish")) {
         project.getLogger().quiet("AFB: Adding publish task to chain");
