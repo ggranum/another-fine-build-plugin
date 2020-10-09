@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb.domain.configuration;
+package com.fetherbrik.gradle.afb.domain.configuration;
 
 public class ArtifactRepoTarget {
     private String url;

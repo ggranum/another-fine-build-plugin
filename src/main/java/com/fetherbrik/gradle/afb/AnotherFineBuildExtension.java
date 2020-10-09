@@ -1,12 +1,12 @@
-package com.geoffgranum.gradle.afb;
+package com.fetherbrik.gradle.afb;
 
-import com.geoffgranum.gradle.afb.domain.BuildInfo;
-import com.geoffgranum.gradle.afb.domain.GitInfo;
-import com.geoffgranum.gradle.afb.domain.configuration.ArtifactRepoConfig;
-import com.geoffgranum.gradle.afb.domain.configuration.DockerConfig;
-import com.geoffgranum.gradle.afb.domain.configuration.GitConfig;
-import com.geoffgranum.gradle.afb.domain.configuration.ReleaseTarget;
-import com.geoffgranum.gradle.afb.service.BuildInfoTransform;
+import com.fetherbrik.gradle.afb.domain.BuildInfo;
+import com.fetherbrik.gradle.afb.domain.GitInfo;
+import com.fetherbrik.gradle.afb.domain.configuration.ArtifactRepoConfig;
+import com.fetherbrik.gradle.afb.domain.configuration.DockerConfig;
+import com.fetherbrik.gradle.afb.domain.configuration.GitConfig;
+import com.fetherbrik.gradle.afb.domain.configuration.ReleaseTarget;
+import com.fetherbrik.gradle.afb.service.BuildInfoTransform;
 import groovy.lang.Closure;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;

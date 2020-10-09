@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb.demo;
+package com.fetherbrik.gradle.afb.demo;
 
 public class DemoMain {
     public static void main(String[] args) {

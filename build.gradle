@@ -21,12 +21,12 @@ repositories {
 
 project.ext.pluginId = rootProject['project.pluginId']
 version = rootProject['project.version']
-group = 'com.geoffgranum'
+group = 'com.fetherbrik'
 
 pluginBundle {
     website = 'https://github.com/ggranum/another-fine-build/'
     vcsUrl = 'https://github.com/ggranum/another-fine-build/'
-    tags = ['CICD', 'git', 'docker', 'build', 'java', 'uttu']
+    tags = ['fetherbrik', 'CICD', 'git', 'docker', 'build', 'java', 'npm', 'version management']
 }
 
 gradlePlugin {
@@ -34,8 +34,11 @@ gradlePlugin {
         conventionalChangelogPlugin {
             id = project.pluginId
             displayName = 'Another Fine Build'
-            description = "Drag some of the things NPM gives by default into Java land."
-            implementationClass = 'com.geoffgranum.gradle.afb.AnotherFineBuildPlugin'
+            description = """
+Drag some of the things NPM gives by default into Java land. 
+Version increment targets, Docker build and push targets.
+"""
+            implementationClass = 'com.fetherbrik.gradle.afb.AnotherFineBuildPlugin'
         }
     }
 }

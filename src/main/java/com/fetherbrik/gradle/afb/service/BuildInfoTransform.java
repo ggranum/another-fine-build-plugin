@@ -1,13 +1,13 @@
-package com.geoffgranum.gradle.afb.service;
+package com.fetherbrik.gradle.afb.service;
 
-import com.geoffgranum.gradle.afb.AnotherFineBuildExtension;
-import com.geoffgranum.gradle.afb.domain.BuildInfo;
-import com.geoffgranum.gradle.afb.domain.DockerInfo;
-import com.geoffgranum.gradle.afb.domain.DockerTag;
-import com.geoffgranum.gradle.afb.domain.GitInfo;
-import com.geoffgranum.gradle.afb.domain.VersionInfo;
-import com.geoffgranum.gradle.afb.domain.configuration.DockerConfig;
-import com.geoffgranum.gradle.afb.domain.configuration.ReleaseTarget;
+import com.fetherbrik.gradle.afb.AnotherFineBuildExtension;
+import com.fetherbrik.gradle.afb.domain.BuildInfo;
+import com.fetherbrik.gradle.afb.domain.GitInfo;
+import com.fetherbrik.gradle.afb.domain.configuration.DockerConfig;
+import com.fetherbrik.gradle.afb.domain.configuration.ReleaseTarget;
+import com.fetherbrik.gradle.afb.domain.DockerInfo;
+import com.fetherbrik.gradle.afb.domain.DockerTag;
+import com.fetherbrik.gradle.afb.domain.VersionInfo;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.gradle.api.Project;
@@ -39,7 +39,7 @@ public class BuildInfoTransform {
       .major(Integer.parseInt(matcher.group(2)))
       .minor(Integer.parseInt(matcher.group(3)))
       .patch(Integer.parseInt(matcher.group(4)));
-    if (matcher.groupCount() > 5) {
+    if (matcher.groupCount() >= 5) {
       builder.suffix(matcher.group(5));
     }
     VersionInfo versionInfo = builder.build();

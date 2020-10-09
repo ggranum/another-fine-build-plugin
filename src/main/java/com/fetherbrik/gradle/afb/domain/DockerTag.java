@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb.domain;
+package com.fetherbrik.gradle.afb.domain;
 
 import org.apache.commons.lang3.StringUtils;
 

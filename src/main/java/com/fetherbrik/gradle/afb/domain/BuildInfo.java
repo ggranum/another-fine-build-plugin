@@ -1,6 +1,6 @@
-package com.geoffgranum.gradle.afb.domain;
+package com.fetherbrik.gradle.afb.domain;
 
-import com.geoffgranum.gradle.afb.domain.configuration.ReleaseTarget;
+import com.fetherbrik.gradle.afb.domain.configuration.ReleaseTarget;
 
 import java.io.File;
 import java.util.Optional;

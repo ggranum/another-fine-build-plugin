@@ -1,8 +1,8 @@
-package com.geoffgranum.gradle.afb.service;
+package com.fetherbrik.gradle.afb.service;
 
-import com.geoffgranum.gradle.afb.AnotherFineBuildPlugin;
-import com.geoffgranum.gradle.afb.domain.BuildInfo;
-import com.geoffgranum.gradle.afb.domain.configuration.ReleaseTarget;
+import com.fetherbrik.gradle.afb.AnotherFineBuildPlugin;
+import com.fetherbrik.gradle.afb.domain.BuildInfo;
+import com.fetherbrik.gradle.afb.domain.configuration.ReleaseTarget;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.TaskProvider;
@@ -19,15 +19,16 @@ public class AfbCoreTasks {
       buildTask.setGroup(AnotherFineBuildPlugin.GROUP);
       buildTask.setDescription("Builds the current target, based on the configuration specified in the afb task.");
       ReleaseTarget target = info.target;
-      project.getLogger().quiet("AFB: checking for tasks to add to chain for target '" + target.getName() + "' on project '" + project.getName() +  "'.");
-      if(project.getPlugins().hasPlugin("application")){
+      project.getLogger().quiet("AFB: checking for tasks to add to chain for target '" + target.getName() + "' on project '" + project.getName() + "'.");
+      if (project.getPlugins().hasPlugin("application")) {
         project.getLogger().quiet("AFB: Adding distTar task to chain");
         buildTask.dependsOn("distTar");
       }
-      else if(project.getPlugins().hasPlugin("java")){
+      if (project.getPlugins().hasPlugin("java")) {
         project.getLogger().quiet("AFB: Adding java build task to chain");
         buildTask.dependsOn("build");
-        buildTask.dependsOn("test");
+      } else if (project.getTasks().findByName("check") != null) {
+        buildTask.dependsOn("check");
       }
       if (target.isArtifacts() && project.getPlugins().hasPlugin("maven-publish")) {
         project.getLogger().quiet("AFB: Adding publish task to chain");

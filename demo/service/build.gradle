@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'application'
     id 'maven-publish'
 }
 repositories {
@@ -21,6 +21,30 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     archiveBaseName.set(project.name)
     from sourceSets.main.allSource
 }
+
+application {
+  applicationName = project.parent.name + '-' + project.name
+  mainClassName = 'com.fetherbrik.gradle.afb.demo.DemoMain'
+}
+
+distTar {
+  outputs.dir(new File(project.buildDir, afb.info.docker.buildDir + '/build/distributions'));
+  outputs.dir(new File(project.buildDir, afb.info.docker.buildDir + '/build/etc'));
+  outputs.dir(new File(project.buildDir, afb.info.docker.buildDir + '/build/config'));
+}
+
+distTar.doLast({
+  copy {
+    from new File(project.buildDir, '/distributions')
+    into new File(project.buildDir, afb.info.docker.buildDir + '/build/distributions')
+    include '**/*.tar'
+  }
+  copy {
+    from project.projectDir
+    into new File(project.buildDir, afb.info.docker.buildDir)
+    include 'etc/**/*', 'config/**/*'
+  }
+})
 
 artifacts {
     archives sourcesJar

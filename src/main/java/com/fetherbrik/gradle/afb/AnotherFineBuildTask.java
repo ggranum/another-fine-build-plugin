@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb;
+package com.fetherbrik.gradle.afb;
 
 import groovy.lang.Closure;
 import org.gradle.api.Action;

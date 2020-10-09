@@ -1,9 +1,11 @@
-package com.geoffgranum.gradle.afb.domain;
+package com.fetherbrik.gradle.afb.domain;
 
 import java.util.Optional;
 
 public final class VersionInfo {
   public final String full;
+  public final String maven;
+
   public final int major;
   public final int minor;
   public final int patch;
@@ -16,9 +18,10 @@ public final class VersionInfo {
     patch = builder.patch;
     prefix = Optional.ofNullable(builder.prefix);
     suffix = Optional.ofNullable(builder.suffix);
-    StringBuilder sb = new StringBuilder(prefix.orElse(""));
-    sb.append(String.format("%s.%s.%s", major, minor, patch));
+    StringBuilder sb = new StringBuilder(String.format("%s.%s.%s", major, minor, patch));
     suffix.ifPresent(s -> sb.append("-").append(s));
+    maven = sb.toString();
+
     full = sb.toString();
   }
 

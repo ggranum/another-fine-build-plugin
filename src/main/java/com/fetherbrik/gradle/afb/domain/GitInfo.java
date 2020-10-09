@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb.domain;
+package com.fetherbrik.gradle.afb.domain;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,8 +1,8 @@
-package com.geoffgranum.gradle.afb.service;
+package com.fetherbrik.gradle.afb.service;
 
-import com.geoffgranum.gradle.afb.AnotherFineBuildPlugin;
-import com.geoffgranum.gradle.afb.domain.BuildInfo;
-import com.geoffgranum.gradle.afb.domain.VersionInfo;
+import com.fetherbrik.gradle.afb.domain.BuildInfo;
+import com.fetherbrik.gradle.afb.AnotherFineBuildPlugin;
+import com.fetherbrik.gradle.afb.domain.VersionInfo;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;

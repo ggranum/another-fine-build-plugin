@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb.domain.configuration;
+package com.fetherbrik.gradle.afb.domain.configuration;
 
 import groovy.lang.Closure;
 

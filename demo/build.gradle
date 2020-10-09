@@ -1,6 +1,6 @@
 plugins {
   id 'com.geoffgranum.gradle-conventional-changelog' version '0.3.1'
-  id 'com.geoffgranum.another-fine-build' version '0.0.5'
+  id 'com.fetherbrik.another-fine-build' version '0.0.1'
 }
 
 afb {
@@ -60,7 +60,7 @@ afb {
     apiToken = dockerHubApiToken //  "Use ~/.gradle/gradle.properties to set."
   }
   artifacts {
-    groupId = "com.geoffgranum.anotherfinebuild.demo"
+    groupId = "com.fetherbrik.anotherfinebuild.demo"
     deploy = {
       url = "https://artifacts.yourhost.org/artifactory/main-maven-releases"
       snapshotUrl = "https://artifacts.yourhost.org/artifactory/main-maven-snapshots"

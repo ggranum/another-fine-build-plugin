@@ -1,8 +1,8 @@
-package com.geoffgranum.gradle.afb;
+package com.fetherbrik.gradle.afb;
 
-import com.geoffgranum.gradle.afb.service.AfbCoreTasks;
-import com.geoffgranum.gradle.afb.service.AfbDockerTasks;
-import com.geoffgranum.gradle.afb.service.AfbSemanticTasks;
+import com.fetherbrik.gradle.afb.service.AfbSemanticTasks;
+import com.fetherbrik.gradle.afb.service.AfbCoreTasks;
+import com.fetherbrik.gradle.afb.service.AfbDockerTasks;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 
@@ -33,8 +33,8 @@ public class AnotherFineBuildPlugin implements Plugin<Project> {
         p.getChildProjects().forEach((String k, Project cp) -> {
           if (new File(cp.getProjectDir(), extension.getInfo().docker.dockerFile).exists()) {
             AfbDockerTasks childDocker = new AfbDockerTasks(cp, extension.getInfo());
-            AfbCoreTasks childCoreTasks = new AfbCoreTasks(cp, extension.getInfo());
           }
+          AfbCoreTasks childCoreTasks = new AfbCoreTasks(cp, extension.getInfo());
         });
       }
     });

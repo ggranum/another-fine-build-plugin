@@ -1,4 +1,4 @@
-package com.geoffgranum.gradle.afb.domain;
+package com.fetherbrik.gradle.afb.domain;
 
 import com.google.common.collect.ImmutableList;
 import org.gradle.api.Project;
