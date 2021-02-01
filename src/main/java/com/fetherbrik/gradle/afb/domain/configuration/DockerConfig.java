@@ -9,6 +9,10 @@ public class DockerConfig {
     private String username;
     private String apiToken;
 
+    public boolean hasData(){
+      return this.repoHost != null && this.repoName != null && this.username != null;
+    }
+
     public String getRepoHost() {
         return repoHost;
     }

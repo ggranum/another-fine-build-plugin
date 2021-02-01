@@ -26,13 +26,14 @@ public class AnotherFineBuildPlugin implements Plugin<Project> {
     project.afterEvaluate(p -> {
       if (extension.getInfo() != null) {
         AfbSemanticTasks semanticTasks = new AfbSemanticTasks(p, extension.getInfo());
-        if (new File(project.getProjectDir(), extension.getInfo().docker.dockerFile).exists()) {
-          AfbDockerTasks afbDocker = new AfbDockerTasks(project, extension.getInfo());
+        if (extension.getInfo().dockerEnabled() && new File(project.getProjectDir(), extension.getInfo().docker.dockerFile).exists()) {
+          AfbDockerTasks afbDocker = new AfbDockerTasks(project, extension.getInfo().docker);
         }
         AfbCoreTasks coreTasks = new AfbCoreTasks(p, extension.getInfo());
         p.getChildProjects().forEach((String k, Project cp) -> {
-          if (new File(cp.getProjectDir(), extension.getInfo().docker.dockerFile).exists()) {
-            AfbDockerTasks childDocker = new AfbDockerTasks(cp, extension.getInfo());
+          //noinspection OptionalGetWithoutIsPresent
+          if (extension.getInfo().dockerEnabled() &&  new File(cp.getProjectDir(), extension.getInfo().docker.dockerFile).exists()) {
+            AfbDockerTasks childDocker = new AfbDockerTasks(cp, extension.getInfo().docker);
           }
           AfbCoreTasks childCoreTasks = new AfbCoreTasks(cp, extension.getInfo());
         });

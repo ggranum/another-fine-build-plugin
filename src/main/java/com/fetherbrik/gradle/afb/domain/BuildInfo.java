@@ -23,6 +23,10 @@ public final class BuildInfo {
     versionInfoFilePath = Optional.ofNullable(builder.versionInfoFilePath);
   }
 
+  public boolean dockerEnabled() {
+    return this.docker.enabled;
+  }
+
   public static final class Builder {
     private String dateStamp;
     private ReleaseTarget target;

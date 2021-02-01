@@ -9,6 +9,7 @@ import com.fetherbrik.gradle.afb.domain.DockerInfo;
 import com.fetherbrik.gradle.afb.domain.DockerTag;
 import com.fetherbrik.gradle.afb.domain.VersionInfo;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.gradle.api.Project;
 
@@ -25,30 +26,25 @@ public class BuildInfoTransform {
 
   private final AnotherFineBuildExtension extension;
   private final GitInfo git;
+  // see semver.org and https://regex101.com/r/vkijKf/1/
+  public static final String SEMVER_REGEX =
+    "^([=v]?)(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$";
+  public static final Pattern SEMVER_PATTERN = Pattern.compile(SEMVER_REGEX);
 
   public BuildInfoTransform(AnotherFineBuildExtension extension, GitInfo git) {
     this.extension = extension;
     this.git = git;
-  }
+  } 
 
   public BuildInfo apply(Project project) {
     String dateStamp = ZonedDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'z'"));
-    Matcher matcher = getVersionMatcher(git.versionString);
-    VersionInfo.Builder builder = new VersionInfo.Builder()
-      .prefix("v")
-      .major(Integer.parseInt(matcher.group(2)))
-      .minor(Integer.parseInt(matcher.group(3)))
-      .patch(Integer.parseInt(matcher.group(4)));
-    if (matcher.groupCount() >= 5) {
-      builder.suffix(matcher.group(5));
-    }
-    VersionInfo versionInfo = builder.build();
-    ReleaseTarget target = getReleaseTarget(project, extension.getReleaseTargets(), versionInfo);
-    DockerInfo dockerInfo = getDockerInfo(project, extension.getDocker(), target, versionInfo, dateStamp);
+    VersionInfo info = getVersionInfo(git.versionString);
+    ReleaseTarget target = getReleaseTarget(project, extension.getReleaseTargets(), info);
+    DockerInfo dockerInfo = getDockerInfo(project, extension.getDocker(), target, info, dateStamp);
     return new BuildInfo.Builder()
       .versionInfoFilePath(extension.getVersionInfoFilePath())
       .dateStamp(dateStamp)
-      .version(versionInfo)
+      .version(info)
       .target(target)
       .git(git)
       .docker(dockerInfo)
@@ -56,26 +52,30 @@ public class BuildInfoTransform {
   }
 
   private DockerInfo getDockerInfo(Project project, DockerConfig docker, ReleaseTarget target, VersionInfo version, String dateStamp) {
-    String host = docker.getRepoHost();
-    boolean isLocal = host.equals("");
-    boolean isHub = host.equals("hub.docker.com");
-    DockerInfo.Builder builder = new DockerInfo.Builder()
-      .dateStamp(dateStamp)
-      .versionString(version.full.toLowerCase())
-      .isLocal(isLocal)
-      .isHub(isHub)
-      .host(host)
-      .org(docker.getRepoOrg())
-      .repo(docker.getRepoName().call(project))
-      .buildDir("docker")
-      .dockerFile("Dockerfile")
-      .username(docker.getUsername())
-      .apiToken(docker.getApiToken());
-    if (target.getDockerTag() != null) {
-      DockerTag placeholder = new DockerTag(target.getDockerTag(), "Tag image with '" + target.getDockerTag() + "'", target.getDockerTag());
-      builder.tags(Lists.newArrayList(placeholder));
+    DockerInfo result = DockerInfo.disabled();
+    if(target.isDocker()) {
+      String host = docker.getRepoHost();
+      boolean isLocal = host.equals("");
+      boolean isHub = host.equals("hub.docker.com");
+      DockerInfo.Builder builder = new DockerInfo.Builder()
+        .dateStamp(dateStamp)
+        .versionString(version.full.toLowerCase())
+        .isLocal(isLocal)
+        .isHub(isHub)
+        .host(host)
+        .org(docker.getRepoOrg())
+        .repo(docker.getRepoName().call(project))
+        .buildDir("docker")
+        .dockerFile("Dockerfile")
+        .username(docker.getUsername())
+        .apiToken(docker.getApiToken());
+      if (target.getDockerTag() != null) {
+        DockerTag placeholder = new DockerTag(target.getDockerTag(), "Tag image with '" + target.getDockerTag() + "'", target.getDockerTag());
+        builder.tags(Lists.newArrayList(placeholder));
+      }
+      result = builder.build();
     }
-    return builder.build();
+    return result;
   }
 
   private ReleaseTarget getReleaseTarget(Project project, Map<String, ReleaseTarget> releaseTargets, VersionInfo versionInfo) {
@@ -110,11 +110,11 @@ public class BuildInfoTransform {
     return result;
   }
 
-  private Matcher getVersionMatcher(String version) {
-    String pattern = "(\\p{Alpha}*)(\\d}*).(\\d*).(\\d*)-?([\\p{Alnum}]*)";
-    Matcher matcher = Pattern.compile(pattern).matcher(version);
+  private VersionInfo getVersionInfo(String version) {
+    Matcher matcher = SEMVER_PATTERN.matcher(version);
     if (!matcher.matches()) {
-      throw new RuntimeException("Could not parse version from value provided by Git describe: '" + version + "': Pattern does not match '" + pattern + "'.");
+      throw new RuntimeException("Could not parse version from value provided by Git describe: '" + version + "': Pattern does not match '" + SEMVER_REGEX
+                                 + "'.");
     } else if (matcher.groupCount() < 5) { // don't forget group 0 is always the whole match.
       throw new RuntimeException("Could not parse version from value provided by Git describe: '"
                                  + version
@@ -135,6 +135,28 @@ public class BuildInfoTransform {
         matcher.group(3),
         matcher.group(4)));
     }
-    return matcher;
+    /* Mostly creating all these variables to get line numbers if there's an exception thrown. */
+    String prefix = matcher.group(1);
+    int major = Integer.parseInt(matcher.group(2));
+    int minor = Integer.parseInt(matcher.group(3));
+    int patch = Integer.parseInt(matcher.group(4));
+    VersionInfo.Builder info = new VersionInfo.Builder();
+    if(StringUtils.isNotBlank(prefix)){
+      info.prefix(prefix);
+    }
+    info.major(major).minor(minor).patch(patch);
+    if (matcher.groupCount() > 5) {
+      String group = matcher.group(5);
+      if(StringUtils.isNotBlank(group)) {
+        info.preRelease(group);
+      }
+    }
+    if (matcher.groupCount() > 6) {
+      String group = matcher.group(6);
+      if(StringUtils.isNotBlank(group)) {
+        info.meta(group);
+      }
+    }
+    return info.build();
   }
 }

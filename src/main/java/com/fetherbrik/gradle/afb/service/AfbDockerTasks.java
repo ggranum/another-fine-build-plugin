@@ -1,7 +1,6 @@
 package com.fetherbrik.gradle.afb.service;
 
 import com.fetherbrik.gradle.afb.AnotherFineBuildPlugin;
-import com.fetherbrik.gradle.afb.domain.BuildInfo;
 import com.fetherbrik.gradle.afb.domain.DockerTag;
 import com.fetherbrik.gradle.afb.domain.DockerInfo;
 import org.gradle.api.Project;
@@ -25,20 +24,19 @@ public class AfbDockerTasks {
   public final TaskProvider<Task> dockerPushAllTags;
   public final List<TaskProvider<Exec>> dockerPushTags;
 
-  public AfbDockerTasks(Project project, BuildInfo info) {
-      dockerAssemble = addDockerAssembleTask(project, info);
-      dockerBuild = addDockerBuildTask(project, dockerAssemble, info);
-      dockerTags = addDockerTagTasks(project, info);
+  public AfbDockerTasks(Project project, DockerInfo dockerInfo) {
+      dockerAssemble = addDockerAssembleTask(project, dockerInfo);
+      dockerBuild = addDockerBuildTask(project, dockerAssemble, dockerInfo);
+      dockerTags = addDockerTagTasks(project, dockerInfo);
       dockerTag = addDockerTagGroupTask(project, dockerTags, dockerBuild);
-      dockerLogin = addDockerLoginTask(project, info);
-      dockerPush = addDockerPushTask(project, dockerLogin, dockerTag, info);
-      dockerPushTags = addDockerPushTagTasks(project, info.docker.tags, dockerPush, info);
+      dockerLogin = addDockerLoginTask(project, dockerInfo);
+      dockerPush = addDockerPushTask(project, dockerLogin, dockerTag, dockerInfo);
+      dockerPushTags = addDockerPushTagTasks(project, dockerInfo.tags, dockerPush, dockerInfo);
       dockerPushAllTags = addDockerPushTagsTask(project, dockerPush, dockerPushTags);
   }
 
 
-  private TaskProvider<Copy> addDockerAssembleTask(Project project, BuildInfo info) {
-    DockerInfo docker = info.docker;
+  private TaskProvider<Copy> addDockerAssembleTask(Project project, DockerInfo docker) {
     return project.getTasks().register("dockerAssemble", Copy.class, assembleTask -> {
       assembleTask.setGroup(AnotherFineBuildPlugin.GROUP);
       assembleTask.setDescription("Assemble docker content for build.");
@@ -54,8 +52,7 @@ public class AfbDockerTasks {
     });
   }
 
-  private TaskProvider<Exec> addDockerBuildTask(Project project, TaskProvider<Copy> assembleTask, BuildInfo info) {
-    DockerInfo docker = info.docker;
+  private TaskProvider<Exec> addDockerBuildTask(Project project, TaskProvider<Copy> assembleTask, DockerInfo docker) {
     return project.getTasks().register("dockerBuild", Exec.class, dockerBuild -> {
       dockerBuild.setGroup(AnotherFineBuildPlugin.GROUP);
       dockerBuild.setDescription("Build the primary docker image");
@@ -65,23 +62,19 @@ public class AfbDockerTasks {
     });
   }
 
-  private TaskProvider<Exec> addDockerPushTask(Project project, Optional<TaskProvider<Task>> dockerLogin, TaskProvider<Task> dockerTag, BuildInfo info) {
-    DockerInfo docker = info.docker;
+  private TaskProvider<Exec> addDockerPushTask(Project project, Optional<TaskProvider<Task>> dockerLogin, TaskProvider<Task> dockerTag, DockerInfo docker) {
     return project.getTasks().register("dockerPush", Exec.class, dockerPush -> {
       dockerPush.setGroup(AnotherFineBuildPlugin.GROUP);
       dockerPush.setDescription("Push the image to the configured docker host.");
       dockerPush.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
       dockerPush.setCommandLine("docker", "push", docker.defaultTagPath());
       dockerPush.dependsOn(dockerTag);
-      if (dockerLogin.isPresent()) {
-        dockerPush.dependsOn(dockerLogin.get());
-      }
+      dockerLogin.ifPresent(dockerPush::dependsOn);
     });
   }
 
   /**
    * Create a single task that we can target for all the tags on the image. This task will 'dependOn' each 'tag' task.
-   * @return
    */
   private TaskProvider<Task> addDockerTagGroupTask(Project project, List<TaskProvider<Exec>> dockerTags, TaskProvider<Exec> dockerBuild) {
     return project.getTasks().register("dockerTag", Task.class, dockerTag -> {
@@ -94,9 +87,8 @@ public class AfbDockerTasks {
     });
   }
 
-  private List<TaskProvider<Exec>> addDockerTagTasks(Project project, BuildInfo info) {
+  private List<TaskProvider<Exec>> addDockerTagTasks(Project project, DockerInfo docker) {
     List<TaskProvider<Exec>> result = new ArrayList<>();
-    DockerInfo docker = info.docker;
     for (DockerTag tag : docker.tags) {
       result.add(addDockerTagTask(project, docker, tag));
     }
@@ -126,16 +118,15 @@ public class AfbDockerTasks {
     });
   }
 
-  private List<TaskProvider<Exec>> addDockerPushTagTasks(Project project, List<DockerTag> tags, TaskProvider<Exec> dockerPush, BuildInfo info) {
+  private List<TaskProvider<Exec>> addDockerPushTagTasks(Project project, List<DockerTag> tags, TaskProvider<Exec> dockerPush, DockerInfo docker) {
     List<TaskProvider<Exec>> tasks = new ArrayList<>();
     for (DockerTag tag : tags) {
-      tasks.add(addDockerPushTagTask(project, tag, dockerPush, info));
+      tasks.add(addDockerPushTagTask(project, tag, dockerPush, docker));
     }
     return tasks;
   }
 
-  private TaskProvider<Exec> addDockerPushTagTask(Project project, DockerTag tag, TaskProvider<Exec> dockerPush, BuildInfo info) {
-    DockerInfo docker = info.docker;
+  private TaskProvider<Exec> addDockerPushTagTask(Project project, DockerTag tag, TaskProvider<Exec> dockerPush, DockerInfo docker) {
     return project.getTasks().register("dockerPush" + tag.capitalizedShortName(), Exec.class, pushTagTask -> {
       pushTagTask.setGroup(AnotherFineBuildPlugin.GROUP);
       pushTagTask.setDescription("Push the image tag '" + tag.tag + "': " + tag.description);
@@ -145,10 +136,9 @@ public class AfbDockerTasks {
     });
   }
 
-  private Optional<TaskProvider<Task>> addDockerLoginTask(Project project, BuildInfo info) {
+  private Optional<TaskProvider<Task>> addDockerLoginTask(Project project, DockerInfo docker) {
     Optional<TaskProvider<Task>> result = Optional.empty();
-    if (!info.docker.isLocal) {
-      DockerInfo docker = info.docker;
+    if (!docker.isLocal) {
       TaskProvider<Task> dockerLogin = project.getTasks().register("dockerLogin", Task.class, task -> {
         task.setGroup(AnotherFineBuildPlugin.GROUP);
         task.setDescription("Login to docker");

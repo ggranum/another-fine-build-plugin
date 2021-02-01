@@ -24,8 +24,14 @@ public final class DockerInfo {
 
   public final String versionString;
   public final String dateStamp;
+  public final boolean enabled;
+
+  private DockerInfo() {
+    this(new Builder().enabled(false));
+  }
 
   private DockerInfo(Builder builder) {
+    enabled = builder.enabled;
     host = builder.host;
     repo = builder.repo;
     org = Optional.ofNullable(builder.org);
@@ -38,6 +44,10 @@ public final class DockerInfo {
     tags = ImmutableList.copyOf(builder.tags);
     versionString = builder.versionString;
     dateStamp = builder.dateStamp;
+  }
+
+  public static DockerInfo disabled() {
+    return new DockerInfo();
   }
 
   public String defaultTagPath() {
@@ -54,7 +64,7 @@ public final class DockerInfo {
 
   private String remoteRepoUrl() {
     String s = this.host + "/";
-    if(this.org.isPresent()){
+    if (this.org.isPresent()) {
       s += org.get() + '/';
     }
     s += this.repo;
@@ -62,6 +72,7 @@ public final class DockerInfo {
   }
 
   public static final class Builder {
+    public boolean enabled = true;
     private String host;
     private String repo;
     private String org;
@@ -76,6 +87,11 @@ public final class DockerInfo {
     private String dateStamp;
 
     public Builder() {
+    }
+
+    public Builder enabled(boolean enabled) {
+      this.enabled = enabled;
+      return this;
     }
 
     public Builder host(String host) {

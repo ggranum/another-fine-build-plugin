@@ -19,28 +19,29 @@ import java.util.Optional;
 
 public class AfbSemanticTasks {
   public AfbSemanticTasks(Project project, BuildInfo info) {
-    addVersionSuffixTask(project, info);
+    addVersionPreReleaseTask(project, info);
     addVersionPatchTask(project, info);
     addVersionMinorTask(project, info);
     addVersionMajorTask(project, info);
   }
 
-  private DefaultTask addVersionSuffixTask(Project project, BuildInfo info) {
-    return project.getTasks().create("versionSuffix", DefaultTask.class, buildTask -> {
+  private DefaultTask addVersionPreReleaseTask(Project project, BuildInfo info) {
+    return project.getTasks().create("versionPrerelease", DefaultTask.class, buildTask -> {
       buildTask.setGroup(AnotherFineBuildPlugin.GROUP);
-      buildTask.setDescription("Update the Suffix and commit. Requires clean git workspace. Use -Psuffix=newSuffix to specify new suffix.");
+      buildTask.setDescription("Update the prerelease and commit. Requires clean git workspace. Use -Ppreid=newPrereleaseId to specify new pre-release.");
       buildTask.getActions().add((task) -> {
         try {
           VersionInfo next;
           File versionFile = checkVersionFileCanBeCreated(info.versionInfoFilePath);
-          if (!project.hasProperty("suffix")) {
-            throw new RuntimeException("Suffix argument is required: use './gradlew versionSuffix -Psuffix=newSuffix'");
+          Optional<String> preId;
+          if (project.hasProperty("preid")) {
+            preId = Optional.of((String) project.getProperties().get("preid"));
+          } else {
+            preId = info.version.preRelease;
           }
-          String suffix = (String) project.getProperties().get("suffix");
-          next = info.version.copy().suffix(suffix).build();
-          if (info.version.full.equals(next.full)) {
-            throw new RuntimeException("Suffix has not changed, nothing to do.");
-          }
+          VersionInfo.Builder nextB = info.version.nextPreRelease();
+          preId.ifPresent(nextB::preRelease);
+          next = nextB.build();
           applyNextVersion(project, info, next, versionFile);
         } catch (IOException | GitAPIException e) {
           throw new RuntimeException(e);
@@ -52,17 +53,12 @@ public class AfbSemanticTasks {
   private DefaultTask addVersionPatchTask(Project project, BuildInfo info) {
     return project.getTasks().create("versionPatch", DefaultTask.class, buildTask -> {
       buildTask.setGroup(AnotherFineBuildPlugin.GROUP);
-      buildTask.setDescription("Update the Patch revision and commit. Requires clean git workspace. Use -Psuffix=newSuffix to update suffix.");
+      buildTask.setDescription("Update the Patch revision and commit. Requires clean git workspace.");
       buildTask.getActions().add((task) -> {
         try {
           VersionInfo next;
           File versionFile = checkVersionFileCanBeCreated(info.versionInfoFilePath);
-          if (project.hasProperty("suffix")) {
-            String suffix = (String) project.getProperties().get("suffix");
-            next = info.version.nextPatch(suffix);
-          } else {
-            next = info.version.nextPatch();
-          }
+          next = info.version.nextPatch();
           applyNextVersion(project, info, next, versionFile);
         } catch (IOException | GitAPIException e) {
           throw new RuntimeException(e);
@@ -75,17 +71,12 @@ public class AfbSemanticTasks {
     return project.getTasks().create("versionMinor", DefaultTask.class, buildTask -> {
       buildTask.setGroup(AnotherFineBuildPlugin.GROUP);
       buildTask.setDescription(
-        "Update the Minor revision number, setting patch to '0', and commit. Requires clean git workspace. Use -Psuffix=newSuffix to update suffix.");
+        "Update the Minor revision number, setting patch to '0', and commit. Requires clean git workspace.");
       buildTask.getActions().add((task) -> {
         try {
           VersionInfo next;
           File versionFile = checkVersionFileCanBeCreated(info.versionInfoFilePath);
-          if (project.hasProperty("suffix")) {
-            String suffix = (String) project.getProperties().get("suffix");
-            next = info.version.nextMinor(suffix);
-          } else {
-            next = info.version.nextMinor();
-          }
+          next = info.version.nextMinor();
           applyNextVersion(project, info, next, versionFile);
         } catch (IOException | GitAPIException e) {
           throw new RuntimeException(e);
@@ -98,17 +89,12 @@ public class AfbSemanticTasks {
     return project.getTasks().create("versionMajor", DefaultTask.class, buildTask -> {
       buildTask.setGroup(AnotherFineBuildPlugin.GROUP);
       buildTask.setDescription(
-        "Update the Major revision number, setting minor and patch to '0', and commit. Requires clean git workspace. Use -Psuffix=newSuffix to update suffix.");
+        "Update the Major revision number, setting minor and patch to '0', and commit. Requires clean git workspace.");
       buildTask.getActions().add((task) -> {
         try {
           VersionInfo next;
           File versionFile = checkVersionFileCanBeCreated(info.versionInfoFilePath);
-          if (project.hasProperty("suffix")) {
-            String suffix = (String) project.getProperties().get("suffix");
-            next = info.version.nextMajor(suffix);
-          } else {
-            next = info.version.nextMajor();
-          }
+          next = info.version.nextMajor();
           applyNextVersion(project, info, next, versionFile);
         } catch (IOException | GitAPIException e) {
           throw new RuntimeException(e);

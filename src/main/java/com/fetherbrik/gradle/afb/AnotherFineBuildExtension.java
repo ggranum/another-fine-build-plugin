@@ -16,6 +16,7 @@ import org.gradle.api.Action;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.Input;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -61,6 +62,7 @@ public class AnotherFineBuildExtension {
         }
     }
 
+    @Nullable
     public DockerConfig getDocker() {
         return docker;
     }
@@ -132,6 +134,7 @@ public class AnotherFineBuildExtension {
             String hash = repository.resolve("HEAD").name();
             Git git = new Git(repository);
             String describe = git.describe().setLong(true).setAlways(true).call();
+            project.getLogger().info("AFB: Found git describe string '" + describe + "'.");
             return new GitInfo.Builder()
                     .gitRoot(extension.getGit().getGitRoot())
                     .hash(hash)

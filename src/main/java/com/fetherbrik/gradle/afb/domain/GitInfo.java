@@ -37,9 +37,11 @@ public final class GitInfo {
     Matcher matcher = Pattern.compile("(v.*)-([\\d]*)-[\\p{Alnum}]{8}").matcher(describe);
     if (matcher.matches()) {
       result = matcher.group(1);
+      System.out.println("AFB: Found version tag '" + result + "'");
     } else if (describe.endsWith(hash.substring(0, 7))) {
       result = "v0.0.0-NOTAG";
-      System.out.println("No Version tag found, using default version of '" + result + "'");
+      System.out.println("AFB: No Version tag found, using default version of '" + result + "'");
+
     }
     return result;
   }
