@@ -32,7 +32,7 @@ public class AfbDockerTasks {
       dockerLogin = addDockerLoginTask(project, dockerInfo);
       dockerPush = addDockerPushTask(project, dockerLogin, dockerTag, dockerInfo);
       dockerPushTags = addDockerPushTagTasks(project, dockerInfo.tags, dockerPush, dockerInfo);
-      dockerPushAllTags = addDockerPushTagsTask(project, dockerPush, dockerPushTags);
+      dockerPushAllTags = addDockerPushTagsTask(project, dockerTag, dockerPushTags);
   }
 
 
@@ -107,10 +107,11 @@ public class AfbDockerTasks {
   /**
    * Create a single task that we can target for all the tags on the image. This task will 'dependOn' each push task.
    */
-  private TaskProvider<Task> addDockerPushTagsTask(Project project, TaskProvider<Exec> dockerPush, List<TaskProvider<Exec>> dockerPushTags) {
+  private TaskProvider<Task> addDockerPushTagsTask(Project project, TaskProvider<Task> dockerTag, List<TaskProvider<Exec>> dockerPushTags) {
     return project.getTasks().register("dockerPushTags", Task.class, pushTagsTask -> {
       pushTagsTask.setGroup(AnotherFineBuildPlugin.GROUP);
       pushTagsTask.setDescription("Push all configured tags, after pushing the main tag.");
+      pushTagsTask.dependsOn(dockerTag);
       for (TaskProvider<Exec> tag : dockerPushTags) {
         pushTagsTask.dependsOn(tag);
       }
