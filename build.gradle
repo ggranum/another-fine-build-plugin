@@ -76,9 +76,11 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
-
+javadoc {
+  options.tags = [ "todo" ]
+}
 task javadocJar(type: Jar, dependsOn:javadoc) {
-    classifier 'javadoc'
+  classifier 'javadoc'
     from javadoc.destinationDir
 }
 

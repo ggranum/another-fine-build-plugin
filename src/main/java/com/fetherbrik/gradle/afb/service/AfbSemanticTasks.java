@@ -33,14 +33,13 @@ public class AfbSemanticTasks {
         try {
           VersionInfo next;
           File versionFile = checkVersionFileCanBeCreated(info.versionInfoFilePath);
-          Optional<String> preId;
+          VersionInfo.Builder nextB;
           if (project.hasProperty("preid")) {
-            preId = Optional.of((String) project.getProperties().get("preid"));
+            String preId = (String) project.getProperties().get("preid");
+            nextB = info.version.nextPreRelease(preId);
           } else {
-            preId = info.version.preRelease;
+            nextB = info.version.nextPreRelease();
           }
-          VersionInfo.Builder nextB = info.version.nextPreRelease();
-          preId.ifPresent(nextB::preRelease);
           next = nextB.build();
           applyNextVersion(project, info, next, versionFile);
         } catch (IOException | GitAPIException e) {
@@ -104,6 +103,7 @@ public class AfbSemanticTasks {
   }
 
   private void applyNextVersion(Project project, BuildInfo info, VersionInfo next, File versionFile) throws IOException, GitAPIException {
+    System.out.printf("Updating project version to %s%n", next.full);
     Repository repository = new FileRepositoryBuilder().findGitDir(new File(info.git.gitRoot)).build();
     Git git = new Git(repository);
     if (!git.status().call().isClean()) {

@@ -25,6 +25,7 @@ public final class VersionInfo {
   public static final Pattern PRE_RELEASE_OR_META_PATTERN = Pattern.compile(PRE_RELEASE_OR_META_REGEX);
   public final String full;
   public final String maven;
+  public final Optional<String> prefix;
   public final int major;
   public final int minor;
   public final int patch;
@@ -35,6 +36,7 @@ public final class VersionInfo {
     major = builder.major;
     minor = builder.minor;
     patch = builder.patch;
+    prefix = Optional.ofNullable(builder.prefix);
     preRelease = Optional.ofNullable(builder.preRelease);
     meta = Optional.ofNullable(builder.meta);
     StringBuilder sb = new StringBuilder(String.format("%s.%s.%s", major, minor, patch));
@@ -57,33 +59,50 @@ public final class VersionInfo {
   }
 
   public VersionInfo nextPatch() {
-    return new Builder().from(this).patch(patch + 1).build();
+    return new Builder().from(this).patch(patch + 1).preRelease(null).build();
   }
 
   public VersionInfo nextMinor() {
-    return new Builder().from(this).minor(minor + 1).patch(0).build();
+    return new Builder().from(this).minor(minor + 1).patch(0).preRelease(null).build();
   }
 
   public VersionInfo nextMajor() {
-    return new Builder().from(this).major(major + 1).minor(0).patch(0).build();
+    return new Builder().from(this).major(major + 1).minor(0).patch(0).preRelease(null).build();
+  }
+
+  public Builder nextPreRelease(String preId) {
+    int currentCount = 0;
+    if(preRelease.isPresent()){
+      Pair<Optional<String>, Optional<Integer>> preReleasePair = getPreReleaseOrMetaPair(preRelease.get());
+      currentCount = preReleasePair.getRight().orElse(0);
+    }
+    return nextPreRelease(preId, currentCount);
+  }
+
+  public Builder nextPreRelease(String releaseText, int currentCount) {
+    int nextCount = currentCount + 1;
+    if (!releaseText.matches("[\\w]+[\\W]$")) {
+      releaseText = releaseText + ".";
+    }
+    return copy().preRelease(releaseText + nextCount);
+
   }
 
   public Builder nextPreRelease() {
     String releaseText = "";
-    int nextCount = 0;
+    int currentCount = 0;
     if (preRelease.isPresent()) {
       Pair<Optional<String>, Optional<Integer>> preReleasePair = getPreReleaseOrMetaPair(preRelease.get());
       if (preReleasePair.getLeft().isPresent()) {
         releaseText = preReleasePair.getLeft().get();
-        if (!releaseText.matches("[\\w]+[\\W]$")) {
-          releaseText = releaseText + ".";
-        }
+        System.out.printf("Found existing pre-release text of %s", releaseText);
       }
       if (preReleasePair.getRight().isPresent()) {
-        nextCount = preReleasePair.getRight().get() + 1;
+        currentCount = preReleasePair.getRight().get();
+        System.out.printf("Found existing pre-release count of %s", currentCount);
       }
     }
-    return this.copy().preRelease(releaseText + nextCount);
+    return nextPreRelease(releaseText, currentCount);
   }
 
   private Pair<Optional<String>, Optional<Integer>> getPreReleaseOrMetaPair(String text) {
@@ -147,7 +166,7 @@ public final class VersionInfo {
       major = copy.major;
       minor = copy.minor;
       patch = copy.patch;
-      prefix = copy.preRelease.orElse(null);
+      prefix = copy.prefix.orElse(null);
       preRelease = copy.preRelease.orElse(null);
       return this;
     }

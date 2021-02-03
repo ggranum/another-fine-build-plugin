@@ -50,6 +50,7 @@ public final class DockerInfo {
     return new DockerInfo();
   }
 
+  /** @todo ggranum: Fix this. If you push this 'tag', all the tags under the repo are pushed.  */
   public String defaultTagPath() {
     return this.isHub || this.isLocal ? this.repo : this.remoteRepoUrl();
   }
