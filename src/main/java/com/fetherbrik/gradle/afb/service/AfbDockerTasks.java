@@ -20,7 +20,7 @@ public class AfbDockerTasks {
   public final TaskProvider<Task> dockerTag;
   public final List<TaskProvider<Exec>> dockerTags;
   public final Optional<TaskProvider<Task>> dockerLogin;
-  public final TaskProvider<Exec> dockerPush;
+  // public final TaskProvider<Exec> dockerPush;
   public final TaskProvider<Task> dockerPushAllTags;
   public final List<TaskProvider<Exec>> dockerPushTags;
 
@@ -30,8 +30,8 @@ public class AfbDockerTasks {
       dockerTags = addDockerTagTasks(project, dockerInfo);
       dockerTag = addDockerTagGroupTask(project, dockerTags, dockerBuild);
       dockerLogin = addDockerLoginTask(project, dockerInfo);
-      dockerPush = addDockerPushTask(project, dockerLogin, dockerTag, dockerInfo);
-      dockerPushTags = addDockerPushTagTasks(project, dockerInfo.tags, dockerPush, dockerInfo);
+      // dockerPush = addDockerPushTask(project, dockerLogin, dockerTag, dockerInfo);
+      dockerPushTags = addDockerPushTagTasks(project, dockerInfo.tags, dockerTag, dockerLogin, dockerInfo);
       dockerPushAllTags = addDockerPushTagsTask(project, dockerTag, dockerPushTags);
   }
 
@@ -62,16 +62,17 @@ public class AfbDockerTasks {
     });
   }
 
-  private TaskProvider<Exec> addDockerPushTask(Project project, Optional<TaskProvider<Task>> dockerLogin, TaskProvider<Task> dockerTag, DockerInfo docker) {
-    return project.getTasks().register("dockerPush", Exec.class, dockerPush -> {
-      dockerPush.setGroup(AnotherFineBuildPlugin.GROUP);
-      dockerPush.setDescription("Push the default image (" + docker.defaultTagPath() + ") to the configured docker host. ");
-      dockerPush.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
-      dockerPush.setCommandLine("docker", "push", docker.defaultTagPath());
-      dockerPush.dependsOn(dockerTag);
-      dockerLogin.ifPresent(dockerPush::dependsOn);
-    });
-  }
+  // /** @todo ggranum: Make this tag and push latest or something. */
+  // private TaskProvider<Exec> addDockerPushTask(Project project, Optional<TaskProvider<Task>> dockerLogin, TaskProvider<Task> dockerTag, DockerInfo docker) {
+  //   return project.getTasks().register("dockerPush", Exec.class, dockerPush -> {
+  //     dockerPush.setGroup(AnotherFineBuildPlugin.GROUP);
+  //     dockerPush.setDescription("Push the default image (" + docker.defaultTagPath() + ") to the configured docker host. ");
+  //     dockerPush.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
+  //     dockerPush.setCommandLine("docker", "push", docker.defaultTagPath());
+  //     dockerPush.dependsOn(dockerTag);
+  //     dockerLogin.ifPresent(dockerPush::dependsOn);
+  //   });
+  // }
 
   /**
    * Create a single task that we can target for all the tags on the image. This task will 'dependOn' each 'tag' task.
@@ -111,7 +112,6 @@ public class AfbDockerTasks {
     return project.getTasks().register("dockerPushTags", Task.class, pushTagsTask -> {
       pushTagsTask.setGroup(AnotherFineBuildPlugin.GROUP);
       pushTagsTask.setDescription("Push all configured tags, after pushing the main tag.");
-      pushTagsTask.dependsOn(dockerTag);
       for (TaskProvider<Exec> tag : dockerPushTags) {
         pushTagsTask.dependsOn(tag);
       }
@@ -119,22 +119,32 @@ public class AfbDockerTasks {
   }
 
   /**
-   * Create one "Push this tag" Task for each registered Docker Tag.
+   * Create one "Push this tag" Task for each registered Docker Tag Task.
    */
-  private List<TaskProvider<Exec>> addDockerPushTagTasks(Project project, List<DockerTag> tags, TaskProvider<Exec> dockerPush, DockerInfo docker) {
+  private List<TaskProvider<Exec>> addDockerPushTagTasks(Project project,
+                                                         List<DockerTag> tags,
+                                                         TaskProvider<Task> dockerTag,
+                                                         Optional<TaskProvider<Task>> dockerLogin,
+                                                         DockerInfo docker) {
     List<TaskProvider<Exec>> tasks = new ArrayList<>();
     for (DockerTag tag : tags) {
-      tasks.add(addDockerPushTagTask(project, tag, dockerPush, docker));
+      tasks.add(addDockerPushTagTask(project, tag, dockerTag, dockerLogin, docker));
     }
     return tasks;
   }
 
-  private TaskProvider<Exec> addDockerPushTagTask(Project project, DockerTag tag, TaskProvider<Exec> dockerPush, DockerInfo docker) {
+  private TaskProvider<Exec> addDockerPushTagTask(Project project,
+                                                  DockerTag tag,
+                                                  TaskProvider<Task> dockerTag,
+                                                  Optional<TaskProvider<Task>> dockerLogin,
+                                                  DockerInfo docker) {
     return project.getTasks().register("dockerPush" + tag.capitalizedShortName(), Exec.class, pushTagTask -> {
       pushTagTask.setGroup(AnotherFineBuildPlugin.GROUP);
       pushTagTask.setDescription("Push the image tag '" + tag.tag + "': " + tag.description);
       pushTagTask.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
       pushTagTask.setCommandLine("docker", "push", docker.tagPath(tag));
+      pushTagTask.dependsOn(dockerTag);
+      dockerLogin.ifPresent(pushTagTask::dependsOn);
     });
   }
 
