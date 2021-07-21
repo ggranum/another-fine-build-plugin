@@ -27,7 +27,7 @@ public class AfbDockerTasks {
   public AfbDockerTasks(Project project, DockerInfo dockerInfo) {
       dockerAssemble = addDockerAssembleTask(project, dockerInfo);
       dockerBuild = addDockerBuildTask(project, dockerAssemble, dockerInfo);
-      dockerTags = addDockerTagTasks(project, dockerInfo);
+      dockerTags = addDockerTagTasks(project, dockerBuild, dockerInfo);
       dockerTag = addDockerTagGroupTask(project, dockerTags, dockerBuild);
       dockerLogin = addDockerLoginTask(project, dockerInfo);
       // dockerPush = addDockerPushTask(project, dockerLogin, dockerTag, dockerInfo);
@@ -88,20 +88,24 @@ public class AfbDockerTasks {
     });
   }
 
-  private List<TaskProvider<Exec>> addDockerTagTasks(Project project, DockerInfo docker) {
+  /**
+   * Create the Tag task (the one that actually tags the image). Tag depends on the dockerBuild.
+   */
+  private List<TaskProvider<Exec>> addDockerTagTasks(Project project, TaskProvider<Exec> dockerBuild, DockerInfo docker) {
     List<TaskProvider<Exec>> result = new ArrayList<>();
     for (DockerTag tag : docker.tags) {
-      result.add(addDockerTagTask(project, docker, tag));
+      result.add(addDockerTagTask(project, dockerBuild, docker, tag));
     }
     return result;
   }
 
-  private TaskProvider<Exec> addDockerTagTask(Project project, DockerInfo docker, DockerTag tag) {
+  private TaskProvider<Exec> addDockerTagTask(Project project, TaskProvider<Exec> dockerBuild, DockerInfo docker, DockerTag tag) {
     return project.getTasks().register("dockerTag" + tag.capitalizedShortName(), Exec.class, (tagTask -> {
       tagTask.setGroup(AnotherFineBuildPlugin.GROUP);
       tagTask.setDescription(tag.description);
       tagTask.setWorkingDir(new File(project.getBuildDir(), docker.buildDir));
       tagTask.setCommandLine("docker", "tag", docker.defaultTagPath(), docker.tagPath(tag));
+      tagTask.dependsOn(dockerBuild);
     }));
   }
 
